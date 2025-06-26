@@ -13,8 +13,10 @@ googleGmsGoogleServices = "4.4.2"
 firebaseAuth = "23.2.1"
 firebaseFirestore = "25.1.4"
 firebaseMessaging = "24.1.1"
+retrofit = "2.9.0"
 
 [libraries]
+converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
 google-webrtc = { module = "org.webrtc:google-webrtc", version.ref = "googleWebrtc" }
 google-webrtc-v1032006 = { module = "org.webrtc:google-webrtc", version.ref = "googleWebrtcVersion" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -27,6 +29,7 @@ constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayo
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version.ref = "firebaseAuth" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestore" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging", version.ref = "firebaseMessaging" }
+retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
