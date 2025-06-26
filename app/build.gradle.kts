@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.onecall"
-        minSdk = 21
+        minSdk = 29
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -44,5 +44,5 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
-    implementation(libs.google.webrtc)
+    //implementation(libs.google.webrtc.v1032006)
 }
