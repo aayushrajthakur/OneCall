@@ -45,6 +45,7 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     //implementation(libs.google.webrtc.v1032006)
+    implementation (libs.zego.uikit.prebuilt.call.android)
     implementation (libs.retrofit)
     implementation (libs.converter.gson)
 
