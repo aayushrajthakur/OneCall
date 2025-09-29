@@ -92,6 +92,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACTIVITY_RECOGNITION}, 101);
+            }
+        }
+
+
+        Intent serviceIntent = new Intent(this, FallDetectionService.class);
+        ContextCompat.startForegroundService(this, serviceIntent);
+
+
         greet = findViewById(R.id.greetings);
         logOut = findViewById(R.id.logout);
         target_id = findViewById(R.id.targetId);
