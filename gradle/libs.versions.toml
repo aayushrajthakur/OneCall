@@ -1,5 +1,9 @@
 [versions]
 agp = "8.9.2"
+androidSdk = "9.5.0"
+expressVideo = "3.21.0"
+expressVideoVersion = "3.7.0"
+githubZego_uikit_prebuilt_call_android = "1.0.0"
 googleWebrtc = "1.0.32"
 googleWebrtcVersion = "1.0.32006"
 junit = "4.13.2"
@@ -13,11 +17,21 @@ googleGmsGoogleServices = "4.4.2"
 firebaseAuth = "23.2.1"
 firebaseFirestore = "25.1.4"
 firebaseMessaging = "24.1.1"
+osmbonuspack = "6.9.0"
+osmdroidAndroid = "6.1.13"
+osmdroidAndroidVersion = "6.1.10"
+playServicesLocation = "21.3.0"
+playServicesMaps = "19.2.0"
 retrofit = "2.9.0"
 zego_uikit_prebuilt_call_android = "3.9.5"
+zego_uikit_prebuilt_call_androidVersion = "1.0.2"
+preference = "1.2.1"
 
 [libraries]
+android-sdk = { module = "org.maplibre.gl:android-sdk", version.ref = "androidSdk" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
+express-video = { module = "im.zego:express-video", version.ref = "expressVideo" }
+express-video-v370 = { module = "im.zego:express-video", version.ref = "expressVideoVersion" }
 google-webrtc = { module = "org.webrtc:google-webrtc", version.ref = "googleWebrtc" }
 google-webrtc-v1032006 = { module = "org.webrtc:google-webrtc", version.ref = "googleWebrtcVersion" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -30,8 +44,16 @@ constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayo
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version.ref = "firebaseAuth" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestore" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging", version.ref = "firebaseMessaging" }
+osmbonuspack = { module = "com.github.MKergall:osmbonuspack", version.ref = "osmbonuspack" }
+osmdroid-android = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroidAndroid" }
+osmdroid-android-v6110 = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroidAndroidVersion" }
+play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
+play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMaps" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 zego_uikit_prebuilt_call_android = { module = "com.github.ZEGOCLOUD:zego_uikit_prebuilt_call_android", version.ref = "zego_uikit_prebuilt_call_android" }
+zego_uikit_prebuilt_call_android-v100 = { module = "com.github.ZEGOCLOUD:zego_uikit_prebuilt_call_android", version.ref = "githubZego_uikit_prebuilt_call_android" }
+zego_uikit_prebuilt_call_android-v102 = { module = "com.github.ZEGOCLOUD:zego_uikit_prebuilt_call_android", version.ref = "zego_uikit_prebuilt_call_androidVersion" }
+preference = { group = "androidx.preference", name = "preference", version.ref = "preference" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

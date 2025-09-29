@@ -44,7 +44,6 @@ public class SignupActivity extends AppCompatActivity {
         signup_btn = findViewById(R.id.signupButton);
         login_back = findViewById(R.id.login_Back);
         mAuth = FirebaseAuth.getInstance();
-        user = mAuth.getCurrentUser();
 
         signup_btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -68,6 +67,18 @@ public class SignupActivity extends AppCompatActivity {
                     password_signup.requestFocus();
                     return;
                 }
+                if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                    email_signup.setError("Invalid email format");
+                    email_signup.requestFocus();
+                    return;
+                }
+                if (password.length() < 6) {
+                    password_signup.setError("Password must be at least 6 characters");
+                    password_signup.requestFocus();
+                    return;
+                }
+
+
 
                 firebaseSignup(uname, email, password);
 
@@ -94,6 +105,9 @@ public class SignupActivity extends AppCompatActivity {
 
     }
 
+
+
+
     void firebaseSignup(String uname, String email, String password){
         mAuth = FirebaseAuth.getInstance();
         mAuth.createUserWithEmailAndPassword(email, password)
@@ -104,18 +118,7 @@ public class SignupActivity extends AppCompatActivity {
                             // Sign in success, update UI with the signed-in user's information
                             //saveToDatabase(uname,email,number,password);
                             Toast.makeText(SignupActivity.this, "Account created successfully", Toast.LENGTH_SHORT).show();
-                            UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
-                                    .setDisplayName(uname)
-                                    .build();
-
-                            user.updateProfile(profileUpdates).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                @Override
-                                public void onComplete(@NonNull Task<Void> task) {
-                                    if (task.isSuccessful()) {
-                                        Log.d(TAG, "User profile updated.");
-                                    }
-                                }
-                            });
+                            UpdateUser(uname);
                             Intent intent = new Intent(SignupActivity.this, LoginActivity.class);
                             startActivity(intent);
                             finish();
@@ -128,5 +131,26 @@ public class SignupActivity extends AppCompatActivity {
                         }
                     }
                 });
+    }
+
+    void UpdateUser(String uname){
+        FirebaseUser newUser = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (newUser != null) {
+            UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                    .setDisplayName(uname)
+                    .build();
+
+            newUser.updateProfile(profileUpdates).addOnCompleteListener(new OnCompleteListener<Void>() {
+                @Override
+                public void onComplete(@NonNull Task<Void> task) {
+                    if (task.isSuccessful()) {
+                        Log.d(TAG, "User profile updated.");
+                    }
+                }
+            });
+        }
+
+
     }
 }

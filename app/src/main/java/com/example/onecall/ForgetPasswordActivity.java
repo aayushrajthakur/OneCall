@@ -1,5 +1,6 @@
 package com.example.onecall;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Patterns;
 import android.view.View;
@@ -51,6 +52,15 @@ public class ForgetPasswordActivity extends AppCompatActivity {
                     resetPassword(email);
                 }
 
+            }
+        });
+
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(ForgetPasswordActivity.this, LoginActivity.class);
+                startActivity(intent);
+                finish();
             }
         });
 

@@ -41,12 +41,18 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.messaging)
+    implementation(libs.play.services.maps)
+    implementation(libs.preference)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
-    //implementation(libs.google.webrtc.v1032006)
-    implementation (libs.zego.uikit.prebuilt.call.android)
     implementation (libs.retrofit)
+    implementation (libs.play.services.location)
+    implementation (libs.osmdroid.android.v6110)
+
+
+
+
     implementation (libs.converter.gson)
 
 }
