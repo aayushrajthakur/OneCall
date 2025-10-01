@@ -1,19 +1,29 @@
 package com.example.onecall;
 
+
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.PowerManager;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -24,6 +34,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
@@ -49,11 +60,25 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MainActivity extends AppCompatActivity implements SensorEventListener {
+public class MainActivity extends AppCompatActivity{
+
+    private final BroadcastReceiver fallReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // ✅ Launch the alert activity over lock screen
+            Intent alertIntent = new Intent(context, FallAlertActivity.class);
+            alertIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(alertIntent);
+        }
+    };
+
     FirebaseAuth mAuth;
     FirebaseUser user;
     TextView greet;
@@ -77,6 +102,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private static final float ACCELERATION_THRESHOLD = 25.0f; // Adjust based on testing
     private boolean isFallDetected = false;
 
+    private Ringtone ringtone;
+
+    // 🔔 Receiver for fall detection
+
+
 
 
 
@@ -92,13 +122,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION)
-                    != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACTIVITY_RECOGNITION}, 101);
-            }
-        }
-
+        checkPermissions();         // 🔐 Your sensor/location permission logic
+        checkBatteryOptimization(); // 🔋 Prompt user early
+        startFallDetectionService();
 
         Intent serviceIntent = new Intent(this, FallDetectionService.class);
         ContextCompat.startForegroundService(this, serviceIntent);
@@ -123,11 +149,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mAuth = FirebaseAuth.getInstance();
         user = mAuth.getCurrentUser();
 
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        if (sensorManager != null) {
-            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-        }
+
+
+
 
 
         if (user != null) {
@@ -164,39 +188,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         });
 
 
-        getCurrentlocation.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                getCurrentLocation();
-                // Ask for location permission
-                ActivityCompat.requestPermissions(MainActivity.this, new String[]{
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                }, 1);
-
-                map = findViewById(R.id.map);
-                map.setTileSource(TileSourceFactory.MAPNIK);
-                map.setMultiTouchControls(true);
-
-                // Set up map controller
-                MapController mapController = (MapController) map.getController();
-                mapController.setZoom(15.0);
-
-                // Add current location overlay
-                MyLocationNewOverlay locationOverlay = new MyLocationNewOverlay(
-                        new GpsMyLocationProvider(MainActivity.this), map);
-                locationOverlay.enableMyLocation();
-                locationOverlay.setDrawAccuracyEnabled(false);
-
-                locationOverlay.enableFollowLocation();
-                map.getOverlays().add(locationOverlay);
-
-                locationCoors.setText("Lat: " + latitude + ",\nLng: " + longitude);
-                fetchAddressFromCoordinates(latitude, longitude);
-
-
-            }
-        });
+        getCurrentlocation.setOnClickListener(view -> checkLocationPermission());
 
 
 
@@ -248,6 +240,28 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         });
     }
+
+    private void checkBatteryOptimization() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+            if (!pm.isIgnoringBatteryOptimizations(getPackageName())) {
+                Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
+            }
+        }
+    }
+
+    private void startFallDetectionService() {
+        Intent serviceIntent = new Intent(this, FallDetectionService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
+    }
+
+
 
 
 
@@ -319,51 +333,72 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
     }
 
+    private void checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED) {
 
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            float x = event.values[0];
-            float y = event.values[1];
-            float z = event.values[2];
-
-            float accelerationMagnitude = (float) Math.sqrt(x * x + y * y + z * z);
-
-            if (accelerationMagnitude > ACCELERATION_THRESHOLD && !isFallDetected) {
-                isFallDetected = true;
-                Log.d("FallDetection", "Hard fall detected! Acceleration: " + accelerationMagnitude);
-                triggerNotification("Hard fall detected!");
-            } else if (accelerationMagnitude < 5.0f && !isFallDetected) {
-                Log.d("FallDetection", "Possible slow fall.");
-            }
+            ActivityCompat.requestPermissions(this, new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+            }, 1);
+        } else {
+            // Permissions already granted — proceed
+            initializeMapAndLocation();
         }
     }
 
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
+    private void initializeMapAndLocation() {
+        getCurrentLocation();
 
+        map = findViewById(R.id.map);
+        map.setTileSource(TileSourceFactory.MAPNIK);
+        map.setMultiTouchControls(true);
+
+        MapController mapController = (MapController) map.getController();
+        mapController.setZoom(15.0);
+
+        MyLocationNewOverlay locationOverlay = new MyLocationNewOverlay(
+                new GpsMyLocationProvider(this), map);
+        locationOverlay.enableMyLocation();
+        locationOverlay.setDrawAccuracyEnabled(false);
+        locationOverlay.enableFollowLocation();
+        map.getOverlays().add(locationOverlay);
+
+        locationCoors.setText("Lat: " + latitude + ",\nLng: " + longitude);
+        fetchAddressFromCoordinates(latitude, longitude);
     }
 
-    private void triggerNotification(String message) {
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        String channelId = "fall_alert_channel";
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    channelId,
-                    "Fall Alerts",
-                    NotificationManager.IMPORTANCE_HIGH
-            );
-            notificationManager.createNotificationChannel(channel);
+
+
+
+
+
+
+
+
+
+    private void checkPermissions() {
+        List<String> permissions = new ArrayList<>();
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED)
+            permissions.add(Manifest.permission.BODY_SENSORS);
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED)
+            permissions.add(Manifest.permission.ACTIVITY_RECOGNITION);
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            permissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+
+        if (!permissions.isEmpty()) {
+            ActivityCompat.requestPermissions(this, permissions.toArray(new String[0]), 100);
         }
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
-                .setSmallIcon(R.drawable.warning)
-                .setContentTitle("Fall Alert")
-                .setContentText(message)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setAutoCancel(true);
-
-        notificationManager.notify(1, builder.build());
     }
+
+
 }

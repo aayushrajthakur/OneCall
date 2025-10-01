@@ -4,23 +4,21 @@
 
     <!-- 📡 Permissions -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     <uses-permission android:name="android.permission.BODY_SENSORS" />
     <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />
-
-
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:allowBackup="true"
-        android:usesCleartextTraffic="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -28,11 +26,16 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.OneCall"
+        android:usesCleartextTraffic="true"
         tools:targetApi="31">
 
         <!-- 🗺️ Map Configuration -->
-        <meta-data android:name="osmdroid.basePath" android:value="osmdroid"/>
-        <meta-data android:name="osmdroid.cachePath" android:value="osmdroid/cache"/>
+        <meta-data
+            android:name="osmdroid.basePath"
+            android:value="osmdroid" />
+        <meta-data
+            android:name="osmdroid.cachePath"
+            android:value="osmdroid/cache" />
 
         <!-- 🚨 Fall Detection Service -->
         <service
@@ -40,7 +43,8 @@
             android:exported="false"
             android:foregroundServiceType="health" />
 
-        <!-- 🎯 Activities -->
+
+        <!-- 👤 Activities -->
         <activity
             android:name=".ForgetPasswordActivity"
             android:exported="false" />
@@ -59,6 +63,14 @@
             android:name=".MainActivity"
             android:exported="false" />
 
+        <!-- 🚨 Fall Alert Activity -->
+        <activity
+            android:name=".FallAlertActivity"
+            android:theme="@style/Theme.AppCompat.Dialog"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
     </application>
 
 </manifest>
