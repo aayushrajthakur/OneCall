@@ -10,8 +10,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.os.VibrationEffect;
-import android.os.Vibrator;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -20,12 +18,14 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 
+import com.example.onecall.utils.AlertUtils;
+
 public class FallDetectionService extends Service implements SensorEventListener {
 
-    private SensorManager sensorManager;
-    private Sensor accelerometer;
-    private static final float ACCELERATION_THRESHOLD = 25.0f;
-    private boolean isFallDetected = false;
+    SensorManager sensorManager;
+    Sensor accelerometer;
+    static final float ACCELERATION_THRESHOLD = 25.0f;
+    boolean isFallDetected = false;
 
     @Override
     public void onCreate() {
@@ -38,7 +38,7 @@ public class FallDetectionService extends Service implements SensorEventListener
             sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
         } else {
             Log.e("FallDetection", "Accelerometer not available on this device.");
-            stopSelf(); // Optional: stop service if sensor is missing
+            stopSelf();
         }
 
         startForeground(1, createNotification());
@@ -51,7 +51,7 @@ public class FallDetectionService extends Service implements SensorEventListener
             NotificationChannel channel = new NotificationChannel(
                     channelId,
                     "Fall Detection Service",
-                    NotificationManager.IMPORTANCE_HIGH // ✅ Ensure visibility
+                    NotificationManager.IMPORTANCE_HIGH
             );
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
@@ -80,18 +80,15 @@ public class FallDetectionService extends Service implements SensorEventListener
                 isFallDetected = true;
                 Log.d("FallDetection", "Hard fall detected! Acceleration: " + accelerationMagnitude);
 
-                // 🔔 Optional: Vibrate for attention
-                Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-                if (vibrator != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator.vibrate(VibrationEffect.createOneShot(1000, VibrationEffect.DEFAULT_AMPLITUDE));
-                }
+                // 🔔 Vibrate using AlertUtils
+                AlertUtils.vibrate(this);
 
-                // 🚨 Launch FallAlertActivity directly from foreground service
+                // 🚨 Launch FallAlertActivity
                 Intent alertIntent = new Intent(this, FallAlertActivity.class);
                 alertIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(alertIntent);
 
-                // ⏳ Reset flag after delay (e.g., 5 seconds)
+                // ⏳ Reset flag after delay
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
                     isFallDetected = false;
                     Log.d("FallDetection", "Fall detection reset.");

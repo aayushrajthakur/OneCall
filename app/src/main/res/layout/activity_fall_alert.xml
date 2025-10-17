@@ -59,10 +59,10 @@
 
         <Button
             android:id="@+id/btn_no"
-            android:text="No, I Need Help"
+            android:text="I Need Help"
             android:backgroundTint="@color/error_red"
             android:textColor="@android:color/white"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="10dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
     </LinearLayout>
