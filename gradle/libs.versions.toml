@@ -17,11 +17,14 @@ googleGmsGoogleServices = "4.4.2"
 firebaseAuth = "23.2.1"
 firebaseFirestore = "25.1.4"
 firebaseMessaging = "24.1.1"
+okhttp = "4.9.3"
 osmbonuspack = "6.9.0"
 osmdroidAndroid = "6.1.13"
 osmdroidAndroidVersion = "6.1.10"
+places = "5.0.0"
 playServicesLocation = "21.3.0"
 playServicesMaps = "19.2.0"
+playServicesMapsVersion = "18.1.0"
 retrofit = "2.9.0"
 zego_uikit_prebuilt_call_android = "3.9.5"
 zego_uikit_prebuilt_call_androidVersion = "1.0.2"
@@ -44,11 +47,14 @@ constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayo
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version.ref = "firebaseAuth" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestore" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging", version.ref = "firebaseMessaging" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 osmbonuspack = { module = "com.github.MKergall:osmbonuspack", version.ref = "osmbonuspack" }
 osmdroid-android = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroidAndroid" }
 osmdroid-android-v6110 = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroidAndroidVersion" }
+places = { module = "com.google.android.libraries.places:places", version.ref = "places" }
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMaps" }
+play-services-maps-v1810 = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMapsVersion" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 zego_uikit_prebuilt_call_android = { module = "com.github.ZEGOCLOUD:zego_uikit_prebuilt_call_android", version.ref = "zego_uikit_prebuilt_call_android" }
 zego_uikit_prebuilt_call_android-v100 = { module = "com.github.ZEGOCLOUD:zego_uikit_prebuilt_call_android", version.ref = "githubZego_uikit_prebuilt_call_android" }

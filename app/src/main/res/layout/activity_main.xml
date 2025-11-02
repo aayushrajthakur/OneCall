@@ -48,7 +48,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Let's Talk"
+                android:text="Let's help"
                 android:textColor="#E8F4FD"
                 android:textSize="16sp"
                 android:fontFamily="sans-serif-light" />
@@ -89,46 +89,87 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:id="@+id/status"
+                        android:clickable="true"
                         android:text="disconnected 🔴"
                         android:textSize="15sp"
                         android:textColor="#222222"/>
 
-                    <ImageView
-                        android:layout_width="match_parent"
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Device location details"
+                    android:textColor="#222222"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <LinearLayout
+                    android:id="@+id/locationDetailsContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/location_details_background"
+                    android:padding="8dp">
+
+                    <TextView
+                        android:id="@+id/locationName"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:id="@+id/refresh_Button"
-                        android:src="@drawable/refresh_24"
-                        android:layout_marginBottom="6dp"
-                        android:layout_marginStart="10dp"
-                        android:layout_marginTop="5dp"
-                        android:clickable="true"/>
+                        android:text="Location Name"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#222222" />
 
+                    <TextView
+                        android:id="@+id/locationCoords"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Lat: 0.000, Lng: 0.000"
+                        android:textSize="14sp"
+                        android:textColor="#555555"
+                        android:layout_marginTop="4dp" />
+                </LinearLayout>
 
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center"
+                    android:paddingHorizontal="5dp">
 
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/getLocation"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:text="Get Location"
+                        android:textSize="14sp"
+                        android:textColor="#FFFFFF"
+                        app:cornerRadius="25dp"
+                        android:backgroundTint="@color/purple_500"
+                        android:textStyle="bold"
+                        android:layout_marginEnd="5dp" />
 
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/showHospitals"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:text="Hospitals"
+                        android:textSize="14sp"
+                        android:textColor="#FFFFFF"
+                        app:cornerRadius="25dp"
+                        android:backgroundTint="@color/purple_500"
+                        android:textStyle="bold"
+                        android:layout_marginStart="5dp" />
 
                 </LinearLayout>
 
 
 
-
-                <TextView
-                    android:id="@+id/userIdText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Connected as Android User"
-                    android:textSize="16sp"
-                    android:textColor="#222222"
-                    android:layout_marginBottom="4dp" />
-
-                <TextView
-                    android:id="@+id/statusText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Ready to make calls"
-                    android:textSize="14sp"
-                    android:textColor="@color/teal_700"
-                    android:textStyle="bold" />
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
@@ -151,50 +192,6 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Make a Call"
-                    android:textSize="18sp"
-                    android:textColor="#222222"
-                    android:textStyle="bold"
-
-                    android:layout_marginBottom="16dp" />
-
-                <!-- Call Input -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="Enter user ID to call"
-                    android:layout_marginBottom="15dp"
-                    app:boxStrokeColor="@color/teal_700"
-                    app:boxCornerRadiusTopStart="16dp"
-                    app:boxCornerRadiusTopEnd="16dp"
-                    app:boxCornerRadiusBottomStart="16dp"
-                    app:boxCornerRadiusBottomEnd="16dp">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/targetId"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="text" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-
-                <!-- Call Button -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/callButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="50dp"
-                    android:text="📞 Call Now"
-                    android:textSize="16sp"
-                    android:textColor="#FFFFFF"
-                    android:fontFamily="sans-serif-medium"
-                    app:cornerRadius="30dp"
-                    android:layout_marginBottom="16dp"
-                    android:backgroundTint="@color/teal_700" />
-
-                <!-- Map Section -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
                     android:text="Map View"
                     android:textColor="#222222"
                     android:textSize="18sp"
@@ -203,7 +200,7 @@
 
                 <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="200dp"
+                    android:layout_height="400dp"
                     android:background="@drawable/users_list_background"
                     android:elevation="4dp">
 
@@ -211,49 +208,49 @@
                         android:id="@+id/map"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent" />
+
+                    <WebView
+                        android:id="@+id/webView"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:visibility="gone" />
                 </FrameLayout>
-                <LinearLayout
-                android:id="@+id/locationDetailsContainer"
+            </LinearLayout>
+
+
+
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="10dp"
+            app:cardBackgroundColor="#FFFFFF">
+
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="@drawable/location_details_background"
-                android:padding="12dp"
-                android:layout_marginTop="10dp">
+                android:padding="20dp">
 
                 <TextView
-                    android:id="@+id/locationName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Location Name"
-                    android:textSize="16sp"
+                    android:text="Hospital Details"
+                    android:textColor="#222222"
+                    android:textSize="18sp"
                     android:textStyle="bold"
-                    android:textColor="#222222" />
+                    android:layout_marginBottom="12dp" />
 
-                <TextView
-                    android:id="@+id/locationCoords"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Lat: 0.000, Lng: 0.000"
-                    android:textSize="14sp"
-                    android:textColor="#555555"
-                    android:layout_marginTop="4dp" />
-            </LinearLayout>
-
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/getLocation"
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerView"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:text="Get Current Location"
-                    android:textSize="16sp"
-                    android:textColor="#FFFFFF"
-                    app:cornerRadius="25dp"
-                    android:layout_marginTop="16dp"
-                    android:backgroundTint="@color/purple_500"
-                    android:textStyle="bold" />
-
+                    android:layout_height="wrap_content"/>
             </LinearLayout>
+
         </androidx.cardview.widget.CardView>
 
         <!-- Quick Actions -->
@@ -264,6 +261,7 @@
             app:cardCornerRadius="20dp"
             app:cardElevation="10dp"
             app:cardBackgroundColor="#FFFFFF">
+
 
             <LinearLayout
                 android:layout_width="match_parent"
