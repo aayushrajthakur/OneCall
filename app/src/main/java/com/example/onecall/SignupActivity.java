@@ -21,8 +21,15 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class SignupActivity extends AppCompatActivity {
 
@@ -108,30 +115,64 @@ public class SignupActivity extends AppCompatActivity {
 
 
 
-    void firebaseSignup(String uname, String email, String password){
+    void firebaseSignup(String uname, String email, String password) {
         mAuth = FirebaseAuth.getInstance();
-        mAuth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener( new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()) {
-                            // Sign in success, update UI with the signed-in user's information
-                            //saveToDatabase(uname,email,number,password);
-                            Toast.makeText(SignupActivity.this, "Account created successfully", Toast.LENGTH_SHORT).show();
-                            UpdateUser(uname);
-                            Intent intent = new Intent(SignupActivity.this, LoginActivity.class);
-                            startActivity(intent);
-                            finish();
-                        } else {
-                            // If sign in fails, display a message to the user.
-                            Log.w(TAG, "createUserWithEmail:failure", task.getException());
-                            Toast.makeText(SignupActivity.this, "Authentication failed.",
-                                    Toast.LENGTH_SHORT).show();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
 
+        // Check if email is already registered
+        mAuth.fetchSignInMethodsForEmail(email)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        List<String> signInMethods = task.getResult().getSignInMethods();
+                        if (signInMethods != null && !signInMethods.isEmpty()) {
+                            Toast.makeText(SignupActivity.this, "Email already in use. Please log in or use a different email.", Toast.LENGTH_LONG).show();
+                        } else {
+                            // Proceed with signup
+                            mAuth.createUserWithEmailAndPassword(email, password)
+                                    .addOnCompleteListener(signupTask -> {
+                                        if (signupTask.isSuccessful()) {
+                                            FirebaseUser user = mAuth.getCurrentUser();
+                                            String uid = user.getUid();
+
+                                            Map<String, Object> userData = new HashMap<>();
+                                            userData.put("username", uname);
+                                            userData.put("email", email);
+                                            userData.put("uid", uid);
+                                            userData.put("createdAt", FieldValue.serverTimestamp());
+
+                                            db.collection("users").document(uid)
+                                                    .set(userData)
+                                                    .addOnSuccessListener(aVoid -> {
+                                                        Toast.makeText(SignupActivity.this, "Account created successfully", Toast.LENGTH_SHORT).show();
+                                                        UpdateUser(uname);
+                                                        Intent intent = new Intent(SignupActivity.this, LoginActivity.class);
+                                                        startActivity(intent);
+                                                        finish();
+                                                    })
+                                                    .addOnFailureListener(e -> {
+                                                        Log.w(TAG, "Error writing document", e);
+                                                        Toast.makeText(SignupActivity.this, "Failed to save user data.", Toast.LENGTH_SHORT).show();
+                                                    });
+
+                                        } else {
+                                            Exception e = signupTask.getException();
+                                            if (e instanceof FirebaseAuthUserCollisionException) {
+                                                Toast.makeText(SignupActivity.this, "This email is already registered.", Toast.LENGTH_LONG).show();
+                                            } else {
+                                                Toast.makeText(SignupActivity.this, "Signup failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                                            }
+                                            Log.w(TAG, "createUserWithEmail:failure", e);
+                                        }
+                                    });
                         }
+                    } else {
+                        Toast.makeText(SignupActivity.this, "Error checking email. Try again.", Toast.LENGTH_SHORT).show();
+                        Log.w(TAG, "fetchSignInMethodsForEmail:failure", task.getException());
                     }
                 });
     }
+
+
 
     void UpdateUser(String uname){
         FirebaseUser newUser = FirebaseAuth.getInstance().getCurrentUser();

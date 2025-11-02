@@ -46,9 +46,13 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    implementation (libs.okhttp)
     implementation (libs.retrofit)
     implementation (libs.play.services.location)
     implementation (libs.osmdroid.android.v6110)
+    implementation(libs.play.services.maps.v1810)
+    implementation(libs.places)
+
 
 
 

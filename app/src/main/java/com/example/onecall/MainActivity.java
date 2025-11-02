@@ -1,23 +1,23 @@
 package com.example.onecall;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
+
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.PowerManager;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.Manifest;
 import android.widget.Toast;
@@ -26,60 +26,80 @@ import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.onecall.adaoters.HospitalAdapter;
+import com.example.onecall.models.HospitalData;
 import com.example.onecall.models.ModelData;
 import com.example.onecall.network.ApiService;
 import com.example.onecall.network.RetrofitClient;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.osmdroid.config.Configuration;
+import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapController;
 import org.osmdroid.views.MapView;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
+import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MainActivity extends AppCompatActivity implements SensorEventListener {
+public class MainActivity extends AppCompatActivity{
+
+    private final BroadcastReceiver fallReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // ✅ Launch the alert activity over lock screen
+            Intent alertIntent = new Intent(context, FallAlertActivity.class);
+            alertIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(alertIntent);
+        }
+    };
+
     FirebaseAuth mAuth;
     FirebaseUser user;
     TextView greet;
     TextView locationName;
     TextView locationCoors;
     Button logOut;
-    MaterialButton callButton;
     MapView map;
     Button getCurrentlocation;
     MaterialButton sendLocation;
     TextView status;
-    ImageView refreshButton;
     double latitude;
     double longitude;
 
-    TextInputEditText target_id;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
 
-    private SensorManager sensorManager;
-    private Sensor accelerometer;
-    private static final float ACCELERATION_THRESHOLD = 25.0f; // Adjust based on testing
-    private boolean isFallDetected = false;
+    MaterialButton showHospitals;
 
+    RecyclerView recyclerView;
 
+    private final String api_key = "865ab6d0507c49f1a334dc5d7776e497";
 
-
+    WebView webView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -92,13 +112,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION)
-                    != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACTIVITY_RECOGNITION}, 101);
-            }
-        }
-
+        checkPermissions();         // 🔐 Your sensor/location permission logic
+        checkBatteryOptimization(); // 🔋 Prompt user early
+        startFallDetectionService();
 
         Intent serviceIntent = new Intent(this, FallDetectionService.class);
         ContextCompat.startForegroundService(this, serviceIntent);
@@ -106,28 +122,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         greet = findViewById(R.id.greetings);
         logOut = findViewById(R.id.logout);
-        target_id = findViewById(R.id.targetId);
-        callButton = findViewById(R.id.callButton);
         locationName = findViewById(R.id.locationName);
         locationCoors = findViewById(R.id.locationCoords);
         status = findViewById(R.id.status);
-        refreshButton = findViewById(R.id.refresh_Button);
 
 
 
         getCurrentlocation = findViewById(R.id.getLocation);
         map = findViewById(R.id.map);
         sendLocation = findViewById(R.id.send_location);
+        showHospitals = findViewById(R.id.showHospitals);
+        webView = findViewById(R.id.webView);
 
 
         mAuth = FirebaseAuth.getInstance();
         user = mAuth.getCurrentUser();
 
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        if (sensorManager != null) {
-            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-        }
+
+
+
 
 
         if (user != null) {
@@ -151,8 +164,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             status.setText("disconnected 🔴");
         }
 
+        recyclerView = findViewById(R.id.recyclerView);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        refreshButton.setOnClickListener(new View.OnClickListener() {
+
+        status.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (isInternetAvailable(MainActivity.this)) {
@@ -163,42 +179,49 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         });
 
+        webView.getSettings().setJavaScriptEnabled(true);
+        webView.setWebViewClient(new WebViewClient());
 
-        getCurrentlocation.setOnClickListener(new View.OnClickListener() {
+
+        getCurrentlocation.setOnClickListener(view -> checkLocationPermission());
+
+
+        showHospitals.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                getCurrentLocation();
-                // Ask for location permission
-                ActivityCompat.requestPermissions(MainActivity.this, new String[]{
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                }, 1);
+                OkHttpClient client = new OkHttpClient();
 
-                map = findViewById(R.id.map);
-                map.setTileSource(TileSourceFactory.MAPNIK);
-                map.setMultiTouchControls(true);
+                // ✅ Make sure longitude comes first in Geoapify's filter
 
-                // Set up map controller
-                MapController mapController = (MapController) map.getController();
-                mapController.setZoom(15.0);
+                String url = "https://api.geoapify.com/v2/places" +
+                        "?categories=healthcare.hospital" +
+                        "&filter=circle:" + longitude + "," + latitude + ",10000" +  // ✅ Increased radius
+                        "&limit=20" +                                                // ✅ Increased limit
+                        "&apiKey=" + api_key;
 
-                // Add current location overlay
-                MyLocationNewOverlay locationOverlay = new MyLocationNewOverlay(
-                        new GpsMyLocationProvider(MainActivity.this), map);
-                locationOverlay.enableMyLocation();
-                locationOverlay.setDrawAccuracyEnabled(false);
+                Log.d("GEOAPIFY_URL", url); // ✅ Log the full URL for testing
 
-                locationOverlay.enableFollowLocation();
-                map.getOverlays().add(locationOverlay);
+                Request request = new Request.Builder()
+                        .url(url)
+                        .build();
 
-                locationCoors.setText("Lat: " + latitude + ",\nLng: " + longitude);
-                fetchAddressFromCoordinates(latitude, longitude);
+                client.newCall(request).enqueue(new okhttp3.Callback() {
+                    @Override
+                    public void onFailure(@NonNull okhttp3.Call call, @NonNull IOException e) {
+                        e.printStackTrace();
+                    }
 
-
+                    @Override
+                    public void onResponse(@NonNull okhttp3.Call call, @NonNull okhttp3.Response response) throws IOException {
+                        if (response.isSuccessful()) {
+                            String jsonData = response.body().string();
+                            Log.d("GEOAPIFY_RESPONSE", jsonData); // ✅ Log raw response
+                            parseHospitalData(jsonData);
+                        }
+                    }
+                });
             }
         });
-
-
 
         sendLocation.setOnClickListener(v -> {
             getCurrentLocation(); // request location
@@ -249,7 +272,70 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         });
     }
 
+    private void checkBatteryOptimization() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+            if (!pm.isIgnoringBatteryOptimizations(getPackageName())) {
+                Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
+            }
+        }
+    }
 
+    private void startFallDetectionService() {
+        Intent serviceIntent = new Intent(this, FallDetectionService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
+    }
+
+    private void parseHospitalData(String jsonData) {
+        try {
+            JSONObject jsonObject = new JSONObject(jsonData);
+            JSONArray features = jsonObject.getJSONArray("features");
+
+            List<HospitalData> hospitals = new ArrayList<>();
+            for (int i = 0; i < features.length(); i++) {
+                JSONObject feature = features.getJSONObject(i);
+                JSONObject properties = feature.getJSONObject("properties");
+
+                String name = properties.optString("name", "Unnamed Hospital");
+                String address = properties.optString("address_line1", "") + ", " +
+                        properties.optString("address_line2", "");
+                double lat = properties.optDouble("lat");
+                double lng = properties.optDouble("lon");
+
+                hospitals.add(new HospitalData(name, address, lat, lng));
+            }
+
+            runOnUiThread(() -> {
+                HospitalAdapter adapter = new HospitalAdapter(hospitals, hospital -> {
+                    // Hide MapView and show WebView
+                    map.setVisibility(View.GONE);
+                    webView.setVisibility(View.VISIBLE);
+
+                    // Load Google Maps directions
+                    String mapUrl = "https://www.google.com/maps/dir/?api=1" +
+                            "&origin=" + latitude + "," + longitude +
+                            "&destination=" + hospital.lat + "," + hospital.lng;
+
+                    webView.loadUrl(mapUrl);
+                });
+
+                recyclerView.setLayoutManager(new LinearLayoutManager(this));
+                recyclerView.setAdapter(adapter);
+
+                plotHospitalsOnMap(hospitals);
+            });
+
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 
 
     public void getCurrentLocation(){
@@ -319,51 +405,104 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
     }
 
+    private void checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED) {
 
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            float x = event.values[0];
-            float y = event.values[1];
-            float z = event.values[2];
-
-            float accelerationMagnitude = (float) Math.sqrt(x * x + y * y + z * z);
-
-            if (accelerationMagnitude > ACCELERATION_THRESHOLD && !isFallDetected) {
-                isFallDetected = true;
-                Log.d("FallDetection", "Hard fall detected! Acceleration: " + accelerationMagnitude);
-                triggerNotification("Hard fall detected!");
-            } else if (accelerationMagnitude < 5.0f && !isFallDetected) {
-                Log.d("FallDetection", "Possible slow fall.");
-            }
+            ActivityCompat.requestPermissions(this, new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+            }, 1);
+        } else {
+            // Permissions already granted — proceed
+            initializeMapAndLocation();
         }
     }
 
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
+    private void initializeMapAndLocation() {
+        getCurrentLocation();
 
+        map = findViewById(R.id.map);
+        map.setTileSource(TileSourceFactory.MAPNIK);
+        map.setMultiTouchControls(true);
+
+        MapController mapController = (MapController) map.getController();
+        mapController.setZoom(15.0);
+
+        MyLocationNewOverlay locationOverlay = new MyLocationNewOverlay(
+                new GpsMyLocationProvider(this), map);
+        locationOverlay.enableMyLocation();
+        locationOverlay.setDrawAccuracyEnabled(false);
+        locationOverlay.enableFollowLocation();
+        map.getOverlays().add(locationOverlay);
+
+        locationCoors.setText("Lat: " + latitude + ",\nLng: " + longitude);
+        fetchAddressFromCoordinates(latitude, longitude);
+
+        webView.setVisibility(View.GONE);
+        map.setVisibility(View.VISIBLE);
     }
 
-    private void triggerNotification(String message) {
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        String channelId = "fall_alert_channel";
+    private void checkPermissions() {
+        List<String> permissions = new ArrayList<>();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    channelId,
-                    "Fall Alerts",
-                    NotificationManager.IMPORTANCE_HIGH
-            );
-            notificationManager.createNotificationChannel(channel);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED)
+            permissions.add(Manifest.permission.BODY_SENSORS);
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED)
+            permissions.add(Manifest.permission.ACTIVITY_RECOGNITION);
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            permissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+
+        if (!permissions.isEmpty()) {
+            ActivityCompat.requestPermissions(this, permissions.toArray(new String[0]), 100);
+        }
+    }
+
+    private void plotHospitalsOnMap(List<HospitalData> hospitals) {
+        map.getOverlays().clear(); // Clear previous overlays
+
+        // Optional: Add user location overlay again if needed
+        MyLocationNewOverlay locationOverlay = new MyLocationNewOverlay(
+                new GpsMyLocationProvider(this), map);
+        locationOverlay.enableMyLocation();
+        locationOverlay.enableFollowLocation();
+        map.getOverlays().add(locationOverlay);
+
+        for (HospitalData hospital : hospitals) {
+            GeoPoint point = new GeoPoint(hospital.lat, hospital.lng);
+
+            Marker marker = new Marker(map);
+            marker.setPosition(point);
+            marker.setTitle(hospital.name);
+            marker.setSubDescription(hospital.address);
+            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+
+            // Optional: Custom icon
+            // marker.setIcon(getResources().getDrawable(R.drawable.hospital_icon));
+
+            // Optional: Click listener
+            marker.setOnMarkerClickListener((m, mapView) -> {
+                Toast.makeText(this, hospital.name + "\n" + hospital.address, Toast.LENGTH_SHORT).show();
+                return true;
+            });
+
+            map.getOverlays().add(marker);
         }
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
-                .setSmallIcon(R.drawable.warning)
-                .setContentTitle("Fall Alert")
-                .setContentText(message)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setAutoCancel(true);
+        // Center map on first hospital
+        if (!hospitals.isEmpty()) {
+            map.getController().setCenter(new GeoPoint(hospitals.get(0).lat, hospitals.get(0).lng));
+        }
 
-        notificationManager.notify(1, builder.build());
+        map.invalidate(); // Refresh map
     }
+
+
 }
